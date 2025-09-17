@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>the POtion Master's cauldron</title>
+
+    <script>
+        // Disable right-click
+        document.addEventListener('contextmenu', event => event.preventDefault());
+
+        // Disable F12, Ctrl+Shift+I, Ctrl+U, Ctrl+S
+        document.onkeydown = function(e) {
+            if (e.keyCode == 123) { // F12
+            return false;
+            }
+            if (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) {
+            return false;
+            }
+            if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) {
+            return false;
+            }
+            if (e.ctrlKey && e.keyCode == 'S'.charCodeAt(0)) {
+            return false;
+            }
+        };
+    </script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+    MathJax = {
+        tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+        }
+    };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <link rel="stylesheet" href="style.css">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="antialiased">
+    <div class="container mx-auto p-4 sm:p-6 md:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-5xl font-bold text-gray-800 mb-2">the POtion Master's cauldron</h1>
+            <h2 class="text-lg text-gray-700 font-medium">by Anupam Chowdhury</h2>
+            <p class="text-lg text-gray-600 mt-4">An interactive tool to explore the dynamics of a fermentation production process.</p>
+        </header>
+
+        <main>
+            <div class="bg-white rounded-2xl shadow-lg p-6 md:p-8">
+                <div class="border-b border-gray-200 mb-6">
+                    <nav class="-mb-px flex space-x-6" id="tabs">
+                        <button data-tab="simulator" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm tab-active">Simulator</button>
+                        <button data-tab="cookbook" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm tab-inactive">Cookbook</button>
+                        <button data-tab="about" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm tab-inactive">About</button>
+                        <button data-tab="model" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm tab-inactive">Model Equations</button>
+                    </nav>
+                </div>
+
+                <div id="simulator-content" class="tab-content">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div class="lg:col-span-1 space-y-4">
+                            <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2">Control Panel</h2>
+
+                            <div class="rounded-lg border border-gray-200 p-4">
+                                <details open>
+                                    <summary class="text-lg font-semibold text-gray-700 mb-3">Fermentation Setup</summary>
+                                    <div class="space-y-4 pt-3 text-sm">
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1">
+                                                <label for="fermentationMode" class="font-medium text-gray-600">Fermentation Mode</label>
+                                                <div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Choose between a simple batch or a fed-batch process.</div></div>
+                                            </div>
+                                            <select id="fermentationMode" class="w-full p-1.5 border rounded-md">
+                                                <option value="fed-batch">Fed-Batch</option>
+                                                <option value="batch">Batch</option>
+                                            </select>
+                                        </div>
+                                        <div class="parameter-slider">
+                                             <div class="flex items-center justify-between mb-1">
+                                                <label for="initialBiomass" class="font-medium text-gray-600">Initial Biomass (g/L)</label>
+                                                <div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Starting amount of microbes.</div></div>
+                                            </div>
+                                            <div class="flex items-center space-x-4"><input type="range" id="initialBiomass" min="0.1" max="5" step="0.1" value="0.5" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"><span id="initialBiomassValue" class="font-mono text-sm p-2 bg-gray-100 rounded-md w-20 text-center">0.5</span></div>
+                                        </div>
+                                        <div class="parameter-slider">
+                                            <div class="flex items-center justify-between mb-1">
+                                                <label for="initialSubstrate" class="font-medium text-gray-600">Initial Primary Carbon (g/L)</label>
+                                                <div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Starting amount of the main food source.</div></div>
+                                            </div>
+                                            <div class="flex items-center space-x-4"><input type="range" id="initialSubstrate" min="0" max="70" step="1" value="30" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"><span id="initialSubstrateValue" class="font-mono text-sm p-2 bg-gray-100 rounded-md w-20 text-center">30</span></div>
+                                        </div>
+                                        <div id="repressor-wrapper" class="parameter-slider">
+                                            <div class="flex items-center justify-between mb-1">
+                                                <label for="initialRepressor" class="font-medium text-gray-600">Initial Repressor (g/L)</label>
+                                                <div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Starting amount of a production-inhibiting compound.</div></div>
+                                            </div>
+                                            <div class="flex items-center space-x-4"><input type="range" id="initialRepressor" min="0" max="10" step="0.5" value="5" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"><span id="initialRepressorValue" class="font-mono text-sm p-2 bg-gray-100 rounded-md w-20 text-center">5.0</span></div>
+                                        </div>
+                                        <div class="parameter-slider">
+                                            <div class="flex items-center justify-between mb-1">
+                                                <label for="initialVolume" class="font-medium text-gray-600">Initial Volume (L)</label>
+                                                <div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Starting volume of the brew.</div></div>
+                                            </div>
+                                            <div class="flex items-center space-x-4"><input type="range" id="initialVolume" min="1" max="10" step="0.5" value="4" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"><span id="initialVolumeValue" class="font-mono text-sm p-2 bg-gray-100 rounded-md w-20 text-center">4.0</span></div>
+                                        </div>
+                                        <div class="parameter-slider">
+                                            <div class="flex items-center justify-between mb-1">
+                                                <label for="initialpH" class="font-medium text-gray-600">Initial pH</label>
+                                                <div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Starting pH of the brew.</div></div>
+                                            </div>
+                                            <div class="flex items-center space-x-4"><input type="range" id="initialpH" min="1" max="14" step="0.1" value="7.0" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"><span id="initialpHValue" class="font-mono text-sm p-2 bg-gray-100 rounded-md w-20 text-center">7.0</span></div>
+                                        </div>
+                                        <div class="parameter-slider">
+                                            <div class="flex items-center justify-between mb-1">
+                                                <label for="totalTime" class="font-medium text-gray-600">Total Fermentation Time (hr)</label>
+                                                <div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Duration of the simulation.</div></div>
+                                            </div>
+                                            <div class="flex items-center space-x-4"><input type="range" id="totalTime" min="20" max="200" step="5" value="100" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"><span id="totalTimeValue" class="font-mono text-sm p-2 bg-gray-100 rounded-md w-20 text-center">100</span></div>
+                                        </div>
+                                    </div>
+                                </details>
+                            </div>
+
+                            <div class="rounded-lg border border-gray-200 p-4">
+                                <details id="product-strategy-section" open>
+                                    <summary class="text-lg font-semibold text-gray-700 mb-3">Product Induction Strategy</summary>
+                                    <div class="space-y-4 pt-3 text-sm">
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1">
+                                                <label for="productMode" class="font-medium text-gray-600">Induction Mode</label>
+                                                <div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">The "recipe" or genetic logic that triggers product formation by the cells.</div></div>
+                                            </div>
+                                            <select id="productMode" class="w-full p-1.5 border rounded-md">
+                                                <option value="constitutive">Constitutive</option>
+                                                <option value="induction-only" selected>Induction Only</option>
+                                                <option value="s2-only">Second Substrate (S2) Only</option>
+                                                <option value="cofeed-only">Co-feed</option>
+                                                <option value="induction-cofeed">Induction + Co-feed</option>
+                                                <option value="repressor-based">Repressor-based</option>
+                                                <option value="carbon-limitation">Carbon Limitation</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </details>
+                            </div>
+
+                            <div class="rounded-lg border border-gray-200 p-4">
+                                <details id="feed-strategies-section" open>
+                                    <summary class="text-lg font-semibold text-gray-700 mb-3">Feed Strategies</summary>
+                                    <div class="space-y-4 pt-3 text-sm">
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1">
+                                                <label for="primaryFeedMode" class="font-medium text-gray-600">Primary Carbon Feed</label>
+                                                <div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">How the main food source is added over time in a fed-batch process.</div></div>
+                                            </div>
+                                            <select id="primaryFeedMode" class="w-full p-1.5 border rounded-md">
+                                                <option value="enabled">Programmed Feed</option>
+                                                <option value="do-stat">DO-Stat Control</option>
+                                                <option value="disabled">Disabled</option>
+                                            </select>
+                                        </div>
+                                        <div id="do-stat-control-section" class="space-y-2 pt-2 border-t mt-4" style="display:none;">
+                                            <h4 class="font-semibold text-gray-600">DO-Stat Controller (F₁)</h4>
+                                            <div class="text-sm"><label>Start Time (hr)</label><input id="do_stat_start_time" type="number" value="20" class="w-full p-1 border rounded-md"></div>
+                                            <div class="text-sm"><label>DO Spike Threshold (%/hr)</label><input id="do_spike_threshold" type="number" value="30" step="5" class="w-full p-1 border rounded-md"></div>
+                                            <div class="text-sm"><label>Feed Shot Size (mL/L)</label><input id="do_feed_shot_size" type="number" value="5" step="0.5" class="w-full p-1 border rounded-md"></div>
+                                            <div class="text-sm"><label>Basal Feed Rate (mL/L/hr)</label><input id="do_basal_feed_rate" type="number" value="0.9" step="0.1" class="w-full p-1 border rounded-md"></div>
+                                            <div class="text-sm"><label>Lockout Period (hr)</label><input id="do_lockout_period" type="number" value="0.5" step="0.1" class="w-full p-1 border rounded-md"></div>
+                                            <div class="mt-3 p-2 bg-gray-100 rounded-lg text-xs text-gray-600">
+                                                <strong>Tuning Tip:</strong> Use the <strong>Basal Feed Rate</strong> to prevent stalling at high cell densities. If spikes still stop, the basal rate may be too low.
+                                            </div>
+                                        </div>
+                                        <div id="f1-strategy-section" class="space-y-2 pt-2 border-t mt-4">
+                                            <div class="flex justify-between items-center">
+                                                <h4 class="font-semibold text-gray-600">Primary Feed (F₁)</h4>
+                                                <button class="add-segment-btn text-sm bg-green-500 text-white px-2 py-1 rounded-md hover:bg-green-600" data-feed="f1">+</button>
+                                            </div>
+                                            <div class="text-sm"><label>Feed Concentration (g/L)</label><input id="f1_conc" type="number" value="500" class="w-full p-1 border rounded-md"></div>
+                                            <div id="f1-segments-container" class="space-y-2"></div>
+                                        </div>
+                                        <div id="f2-strategy-section" class="space-y-2 pt-2 border-t mt-4">
+                                            <div class="flex justify-between items-center">
+                                                <h4 class="font-semibold text-gray-600">Secondary Feed (F₂)</h4>
+                                                <button class="add-segment-btn text-sm bg-green-500 text-white px-2 py-1 rounded-md hover:bg-green-600" data-feed="f2">+</button>
+                                            </div>
+                                            <div class="text-sm"><label>Feed Concentration (g/L)</label><input id="f2_conc" type="number" value="200" class="w-full p-1 border rounded-md"></div>
+                                            <div id="f2-segments-container" class="space-y-2"></div>
+                                        </div>
+                                        <div id="fi-strategy-section" class="space-y-2 pt-2 border-t mt-4">
+                                            <div class="flex justify-between items-center">
+                                                <h4 class="font-semibold text-gray-600">Inducer Feed (Fᵢ)</h4>
+                                                <button class="add-segment-btn text-sm bg-green-500 text-white px-2 py-1 rounded-md hover:bg-green-600" data-feed="fi">+</button>
+                                            </div>
+                                            <div class="text-sm"><label>Feed Concentration (g/L)</label><input id="fi_conc" type="number" value="50" class="w-full p-1 border rounded-md"></div>
+                                            <div id="fi-segments-container" class="space-y-2"></div>
+                                        </div>
+                                    </div>
+                                </details>
+                            </div>
+
+                            <div class="rounded-lg border border-gray-200 p-4 space-y-3">
+                                <h3 class="text-lg font-semibold text-gray-700 mb-2">Biological Parameters</h3>
+                                
+                                <details>
+                                    <summary class="text-md font-semibold text-gray-600">Primary Carbon (S1) Growth - Aerobic</summary>
+                                    <div class="grid grid-cols-2 gap-x-4 gap-y-3 pt-3 text-sm">
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="mu_max_s1_aerobic" class="font-medium text-gray-600">µ_max,S1,aerobic (1/hr)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Max growth rate on primary carbon (aerobic).</div></div></div>
+                                            <input type="number" id="mu_max_s1_aerobic" value="0.2" step="0.01" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="K_S1" class="font-medium text-gray-600">K_S1 (g/L)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Affinity for primary carbon. A lower value means higher affinity (cells grow well even at low concentrations).</div></div></div>
+                                            <input type="number" id="K_S1" value="0.02" step="0.05" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="K_i_S1_mu" class="font-medium text-gray-600">K_i,S1,growth (g/L)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Substrate inhibition constant for growth on S1. High values mean less inhibition.</div></div></div>
+                                            <input type="number" id="K_i_S1_mu" value="150" step="5" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="Y_X_S1_aerobic" class="font-medium text-gray-600">Y_X/S1,aerobic (g/g)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Biomass yield. Grams of new cells produced per gram of S1 consumed (aerobic).</div></div></div>
+                                            <input type="number" id="Y_X_S1_aerobic" value="0.5" step="0.01" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="m_S1_aerobic" class="font-medium text-gray-600">m_S1,aerobic</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Maintenance coefficient. Grams of S1 consumed per gram of cells per hour just to stay alive (aerobic).</div></div></div>
+                                            <input type="number" id="m_S1_aerobic" value="0.01" step="0.001" class="w-full p-1 border rounded-md">
+                                        </div>
+                                    </div>
+                                </details>
+
+                                <details>
+                                    <summary class="text-md font-semibold text-gray-600">Growth - Aerobic & Environmental Factors</summary>
+                                    <div class="grid grid-cols-2 gap-x-4 gap-y-3 pt-3 text-sm">
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="K_O2" class="font-medium text-gray-600">K_O2 (g/L)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Oxygen affinity for aerobic growth.</div></div></div>
+                                            <input type="number" id="K_O2" value="0.0002" step="0.0001" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="Y_H_S1_aerobic" class="font-medium text-gray-600">Y_H/S1,aerobic (mmol/g)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Acid produced per gram of S1 (aerobic).</div></div></div>
+                                            <input type="number" id="Y_H_S1_aerobic" value="2" step="1" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="ph_opt" class="font-medium text-gray-600">pH_opt</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Optimal pH for growth.</div></div></div>
+                                            <input type="number" id="ph_opt" value="7.0" step="0.1" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="ph_min" class="font-medium text-gray-600">pH_min</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Minimum pH for growth.</div></div></div>
+                                            <input type="number" id="ph_min" value="5.0" step="0.1" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="ph_max" class="font-medium text-gray-600">pH_max</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Maximum pH for growth.</div></div></div>
+                                            <input type="number" id="ph_max" value="8.5" step="0.1" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="temp_opt" class="font-medium text-gray-600">T_opt (°C)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Optimal temperature for growth.</div></div></div>
+                                            <input type="number" id="temp_opt" value="37" step="1" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="temp_min" class="font-medium text-gray-600">T_min (°C)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Minimum temperature for growth.</div></div></div>
+                                            <input type="number" id="temp_min" value="20" step="1" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="temp_max" class="font-medium text-gray-600">T_max (°C)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Maximum temperature for growth.</div></div></div>
+                                            <input type="number" id="temp_max" value="42" step="1" class="w-full p-1 border rounded-md">
+                                        </div>
+                                    </div>
+                                </details>
+
+                                <details>
+                                    <summary class="text-md font-semibold text-gray-600">Product - Aerobic & Environmental Factors</summary>
+                                    <div class="grid grid-cols-2 gap-x-4 gap-y-3 pt-3 text-sm">
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="qp_max_aerobic" class="font-medium text-gray-600">q_p,max,aerobic</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Max specific production rate (g_product / g_biomass / hr) under aerobic conditions.</div></div></div>
+                                            <input type="number" id="qp_max_aerobic" value="0.01" step="0.001" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="K_p_S1" class="font-medium text-gray-600">K_p,S1</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Production affinity for S1.</div></div></div>
+                                            <input type="number" id="K_p_S1" value="0.01" step="0.01" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="K_i_S1_qp" class="font-medium text-gray-600">K_i,S1,prod (g/L)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Substrate inhibition constant for production on S1.</div></div></div>
+                                            <input type="number" id="K_i_S1_qp" value="200" step="5" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="Y_P_S1_aerobic" class="font-medium text-gray-600">Y_P/S1,aerobic (g/g)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Product yield on S1 (aerobic).</div></div></div>
+                                            <input type="number" id="Y_P_S1_aerobic" value="0.2" step="0.01" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="ph_opt_p" class="font-medium text-gray-600">pH_opt (Product)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Optimal pH for product formation.</div></div></div>
+                                            <input type="number" id="ph_opt_p" value="7.0" step="0.1" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="temp_opt_p" class="font-medium text-gray-600">T_opt (°C, Product)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Optimal temperature for product formation.</div></div></div>
+                                            <input type="number" id="temp_opt_p" value="37" step="1" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="ph_min_p" class="font-medium text-gray-600">pH_min (Product)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Minimum pH for product formation.</div></div></div>
+                                            <input type="number" id="ph_min_p" value="6.0" step="0.1" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="temp_min_p" class="font-medium text-gray-600">T_min (°C, Product)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Minimum temperature for product formation.</div></div></div>
+                                            <input type="number" id="temp_min_p" value="18" step="1" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="ph_max_p" class="font-medium text-gray-600">pH_max (Product)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Maximum pH for product formation.</div></div></div>
+                                            <input type="number" id="ph_max_p" value="8.0" step="0.1" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="temp_max_p" class="font-medium text-gray-600">T_max (°C, Product)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Maximum temperature for product formation.</div></div></div>
+                                            <input type="number" id="temp_max_p" value="45" step="1" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div class="col-span-2">
+                                            <div class="flex items-center justify-between mb-1"><label for="Y_H_P_aerobic" class="font-medium text-gray-600">Y_H/P,aerobic (mmol/g)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Acid/base produced per gram of product (aerobic). Use a negative value for base production.</div></div></div>
+                                            <input type="number" id="Y_H_P_aerobic" value="0" step="0.5" class="w-full p-1 border rounded-md">
+                                        </div>
+                                    </div>
+                                </details>
+
+                                <details id="s2-kinetics-section">
+                                    <summary class="text-md font-semibold text-gray-600">Secondary Carbon (S2)</summary>
+                                    <div class="grid grid-cols-2 gap-x-4 gap-y-3 pt-3 text-sm">
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="mu_max_s2_aerobic" class="font-medium text-gray-600">µ_max,S2,aerobic (1/hr)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Max growth rate on secondary carbon (aerobic).</div></div></div>
+                                            <input type="number" id="mu_max_s2_aerobic" value="0.05" step="0.01" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="K_S2" class="font-medium text-gray-600">K_S2 (g/L)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Affinity for secondary carbon.</div></div></div>
+                                            <input type="number" id="K_S2" value="0.1" step="0.05" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="K_i_S2_mu" class="font-medium text-gray-600">K_i,S2,growth (g/L)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Substrate inhibition constant for growth on S2.</div></div></div>
+                                            <input type="number" id="K_i_S2_mu" value="100" step="5" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="Y_X_S2_aerobic" class="font-medium text-gray-600">Y_X/S2,aerobic (g/g)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Biomass yield on S2 (aerobic).</div></div></div>
+                                            <input type="number" id="Y_X_S2_aerobic" value="0.4" step="0.01" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="K_p_S2" class="font-medium text-gray-600">K_p,S2</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Production affinity for S2.</div></div></div>
+                                            <input type="number" id="K_p_S2" value="0.1" step="0.01" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="K_i_S2_qp" class="font-medium text-gray-600">K_i,S2,prod (g/L)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Substrate inhibition constant for production on S2.</div></div></div>
+                                            <input type="number" id="K_i_S2_qp" value="120" step="5" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="Y_P_S2_aerobic" class="font-medium text-gray-600">Y_P/S2,aerobic (g/g)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Product yield on S2 (aerobic).</div></div></div>
+                                            <input type="number" id="Y_P_S2_aerobic" value="0.3" step="0.01" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="m_S2_aerobic" class="font-medium text-gray-600">m_S2,aerobic</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Maintenance coefficient for S2 (aerobic).</div></div></div>
+                                            <input type="number" id="m_S2_aerobic" value="0.005" step="0.001" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="Y_H_S2_aerobic" class="font-medium text-gray-600">Y_H/S2,aerobic (mmol/g)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Acid produced per gram of S2 (aerobic).</div></div></div>
+                                            <input type="number" id="Y_H_S2_aerobic" value="1" step="0.5" class="w-full p-1 border rounded-md">
+                                        </div>
+                                    </div>
+                                </details>
+                                
+                                <details>
+                                    <summary class="text-md font-semibold text-gray-600">Anaerobic & Microaerobic Kinetics</summary>
+                                    <div class="grid grid-cols-2 gap-x-4 gap-y-3 pt-3 text-sm">
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="K_O2_anaerobic_inhibition" class="font-medium text-gray-600">K_O2,ana_inhib (g/L)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">O₂ conc. that half-inhibits anaerobic pathways (lower means more sensitive to O₂).</div></div></div>
+                                            <input type="number" id="K_O2_anaerobic_inhibition" value="0.00001" step="0.000001" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="mu_max_s1_anaerobic" class="font-medium text-gray-600">µ_max,S1,anaerobic (1/hr)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Max growth rate on S1 (anaerobic).</div></div></div>
+                                            <input type="number" id="mu_max_s1_anaerobic" value="0.05" step="0.01" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="Y_X_S1_anaerobic" class="font-medium text-gray-600">Y_X/S1,anaerobic (g/g)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Biomass yield on S1 (anaerobic).</div></div></div>
+                                            <input type="number" id="Y_X_S1_anaerobic" value="0.1" step="0.01" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="m_S1_anaerobic" class="font-medium text-gray-600">m_S1,anaerobic</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">S1 consumed for cell maintenance (anaerobic).</div></div></div>
+                                            <input type="number" id="m_S1_anaerobic" value="0.005" step="0.001" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="qp_max_anaerobic" class="font-medium text-gray-600">q_p,max,anaerobic</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Max specific production rate (anaerobic).</div></div></div>
+                                            <input type="number" id="qp_max_anaerobic" value="0.005" step="0.001" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="Y_P_S1_anaerobic" class="font-medium text-gray-600">Y_P/S1,anaerobic (g/g)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Product yield on S1 (anaerobic).</div></div></div>
+                                            <input type="number" id="Y_P_S1_anaerobic" value="0.4" step="0.01" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="Y_H_S1_anaerobic" class="font-medium text-gray-600">Y_H/S1,anaerobic (mmol/g)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Acid produced per gram of S1 (anaerobic).</div></div></div>
+                                            <input type="number" id="Y_H_S1_anaerobic" value="10" step="1" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="mu_max_s2_anaerobic" class="font-medium text-gray-600">µ_max,S2,anaerobic (1/hr)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Max growth rate on S2 (anaerobic).</div></div></div>
+                                            <input type="number" id="mu_max_s2_anaerobic" value="0.01" step="0.005" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="Y_X_S2_anaerobic" class="font-medium text-gray-600">Y_X/S2,anaerobic (g/g)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Biomass yield on S2 (anaerobic).</div></div></div>
+                                            <input type="number" id="Y_X_S2_anaerobic" value="0.05" step="0.01" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="m_S2_anaerobic" class="font-medium text-gray-600">m_S2,anaerobic</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">S2 consumed for cell maintenance (anaerobic).</div></div></div>
+                                            <input type="number" id="m_S2_anaerobic" value="0.001" step="0.001" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="Y_P_S2_anaerobic" class="font-medium text-gray-600">Y_P/S2,anaerobic (g/g)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Product yield on S2 (anaerobic).</div></div></div>
+                                            <input type="number" id="Y_P_S2_anaerobic" value="0.2" step="0.01" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="Y_H_S2_anaerobic" class="font-medium text-gray-600">Y_H/S2,anaerobic (mmol/g)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Acid produced per gram of S2 (anaerobic).</div></div></div>
+                                            <input type="number" id="Y_H_S2_anaerobic" value="5" step="1" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="Y_H_P_anaerobic" class="font-medium text-gray-600">Y_H/P,anaerobic (mmol/g)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Acid/base produced per gram of product (anaerobic).</div></div></div>
+                                            <input type="number" id="Y_H_P_anaerobic" value="0" step="0.5" class="w-full p-1 border rounded-md">
+                                        </div>
+                                    </div>
+                                </details>
+
+                                <details id="inducer-repressor-kinetics-section">
+                                    <summary class="text-md font-semibold text-gray-600">Inducer, Repressor & Limitation Kinetics</summary>
+                                    <div class="grid grid-cols-2 gap-x-4 gap-y-3 pt-3 text-sm">
+                                        <div id="param-K_p_I-wrapper">
+                                            <div class="flex items-center justify-between mb-1"><label for="K_p_I" class="font-medium text-gray-600">K_p,I</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Inducer concentration for half-max production.</div></div></div>
+                                            <input type="number" id="K_p_I" value="0.05" step="0.005" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div id="param-m_I-wrapper">
+                                            <div class="flex items-center justify-between mb-1"><label for="m_I" class="font-medium text-gray-600">m_I</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Inducer consumption rate (g_inducer / g_biomass / hr).</div></div></div>
+                                            <input type="number" id="m_I" value="0.001" step="0.001" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div id="param-K_Ii-wrapper">
+                                            <div class="flex items-center justify-between mb-1"><label for="K_Ii" class="font-medium text-gray-600">K_Ii</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Inducer concentration for growth inhibition.</div></div></div>
+                                            <input type="number" id="K_Ii" value="0.5" step="0.01" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="K_i_I_qp" class="font-medium text-gray-600">K_i,I,prod (g/L)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Inducer inhibition constant for production.</div></div></div>
+                                            <input type="number" id="K_i_I_qp" value="10" step="0.5" class="w-full p-1 border rounded-md">
+                                        </div>
+
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="K_i_I_mu" class="font-medium text-gray-600">K_i,I,growth (g/L)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Inducer inhibition constant for growth. This replaces the simple inhibition model with a more realistic one.</div></div></div>
+                                            <input type="number" id="K_i_I_mu" value="15" step="0.5" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div id="param-q_R-wrapper">
+                                            <div class="flex items-center justify-between mb-1"><label for="q_R" class="font-medium text-gray-600">q_R</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Repressor consumption rate (g_repressor / g_biomass / hr).</div></div></div>
+                                            <input type="number" id="q_R" value="0.1" step="0.001" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div id="param-K_pR-wrapper">
+                                            <div class="flex items-center justify-between mb-1"><label for="K_pR" class="font-medium text-gray-600">K_pR</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Repressor conc. for half-max repression.</div></div></div>
+                                            <input type="number" id="K_pR" value="0.1" step="0.01" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div id="param-n_R-wrapper">
+                                            <div class="flex items-center justify-between mb-1"><label for="n_R" class="font-medium text-gray-600">n_R (Hill Coeff.)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Steepness of repression (e.g., 4). Higher values mean a sharper on/off switch.</div></div></div>
+                                            <input type="number" id="n_R" value="4" step="0.5" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div id="param-K_pS1_lim-wrapper">
+                                            <div class="flex items-center justify-between mb-1"><label for="K_pS1_lim" class="font-medium text-gray-600">K_pS1,lim</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">S1 conc. for half-max induction by limitation.</div></div></div>
+                                            <input type="number" id="K_pS1_lim" value="0.1" step="0.01" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div id="param-n_S1_lim-wrapper">
+                                            <div class="flex items-center justify-between mb-1"><label for="n_S1_lim" class="font-medium text-gray-600">n_S1,lim (Hill Coeff.)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Steepness of induction by limitation (e.g., 4).</div></div></div>
+                                            <input type="number" id="n_S1_lim" value="4" step="0.5" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="P_crit" class="font-medium text-gray-600">P_crit (g/L)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Critical product concentration. Growth stops completely when the product reaches this level.</div></div></div>
+                                            <input type="number" id="P_crit" value="100" step="5" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="n_P" class="font-medium text-gray-600">n_P (Hill Coeff.)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Exponent for product inhibition. Higher values create a sharper 'cliff' effect as the product approaches P_crit.</div></div></div>
+                                            <input type="number" id="n_P" value="1" step="0.1" class="w-full p-1 border rounded-md">
+                                        </div>
+                                    </div>
+                                </details>
+                    
+                                <details>
+                                    <summary class="text-md font-semibold text-gray-600">Cell Viability, Lysis, and Genetic Drift</summary>
+                                    <div class="grid grid-cols-2 gap-x-4 gap-y-3 pt-3 text-sm">
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="kd" class="font-medium text-gray-600">k_d (1/hr)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Specific death rate. A first-order rate constant for biomass decay.</div></div></div>
+                                            <input type="number" id="kd" value="0.005" step="0.001" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1"><label for="Y_S1_lysis" class="font-medium text-gray-600">Y_S1/lysis (g/g)</label><div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Yield of recyclable substrate (S1) from lysed dead cells. A value of 0.7 means 70% of dead biomass becomes usable food.</div></div></div>
+                                            <input type="number" id="Y_S1_lysis" value="0.7" step="0.05" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div class="parameter-slider">
+                                            <div class="flex items-center justify-between mb-1">
+                                                <label for="mutation_rate" class="font-medium text-gray-600">Mutation Rate (1/hr)</label>
+                                                <div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Rate at which producer cells mutate into non-producers. A value like 1e-5 or 1e-6 is typical.</div></div>
+                                            </div>
+                                            <input type="number" id="mutation_rate" value="0.00001" step="0.000001" class="w-full p-1 border rounded-md">
+                                        </div>
+                                        <div class="parameter-slider">
+                                            <div class="flex items-center justify-between mb-1">
+                                                <label for="non_producer_growth_advantage" class="font-medium text-gray-600">Growth Advantage (%)</label>
+                                                <div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">How much faster non-producers grow compared to producers (e.g., 5% means a factor of 1.05).</div></div>
+                                            </div>
+                                            <div class="flex items-center space-x-4"><input type="range" id="non_producer_growth_advantage" min="0" max="25" step="0.5" value="5" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"><span id="non_producer_growth_advantageValue" class="font-mono text-sm p-2 bg-gray-100 rounded-md w-20 text-center">5.0</span></div>
+                                        </div>
+                                    </div>
+                                </details>
+                            </div>
+
+
+                            <div class="rounded-lg border border-gray-200 p-4">
+                                <details>
+                                    <summary class="text-lg font-semibold text-gray-700 mb-3">Process Conditions</summary>
+                                    <div class="space-y-4 pt-3 text-sm">
+                                        
+                                        <div id="temp-strategy-section" class="space-y-2 pt-2 border-t mt-4">
+                                            <div class="flex justify-between items-center">
+                                                <h4 class="font-semibold text-gray-600">Temperature (°C)</h4>
+                                                <button class="add-segment-btn text-sm bg-green-500 text-white px-2 py-1 rounded-md hover:bg-green-600" data-feed="temp">+</button>
+                                            </div>
+                                            <div id="temp-segments-container" class="space-y-2"></div>
+                                        </div>
+
+                                        <div id="ph_setpoint-strategy-section" class="space-y-2 pt-2 border-t mt-4">
+                                            <div class="flex justify-between items-center">
+                                                <h4 class="font-semibold text-gray-600">pH Setpoint</h4>
+                                                <button class="add-segment-btn text-sm bg-green-500 text-white px-2 py-1 rounded-md hover:bg-green-600" data-feed="ph_setpoint">+</button>
+                                            </div>
+                                            <div id="ph_setpoint-segments-container" class="space-y-2"></div>
+                                        </div>
+
+                                        <div id="fair-strategy-section" class="space-y-2 pt-2 border-t mt-4">
+                                            <div class="flex justify-between items-center">
+                                                <h4 class="font-semibold text-gray-600">Air Flow Rate (F_air)</h4>
+                                                <button class="add-segment-btn text-sm bg-green-500 text-white px-2 py-1 rounded-md hover:bg-green-600" data-feed="fair">+</button>
+                                            </div>
+                                            <div id="fair-segments-container" class="space-y-2"></div>
+                                        </div>
+
+                                    </div>
+                                </details>
+                            </div>
+                            
+                            <div class="rounded-lg border border-gray-200 p-4">
+                                <details>
+                                    <summary class="text-lg font-semibold text-gray-700 mb-3">Oxygen & Agitation Dynamics</summary>
+                                    <div class="grid grid-cols-2 gap-x-4 gap-y-3 pt-3 text-sm">
+                                        <div><label for="kLa_c" class="font-medium text-gray-600">kLa_c</label><input type="number" id="kLa_c" value="0.01" step="0.01" class="w-full p-1 border rounded-md mt-1"></div>
+                                        <div><label for="kLa_a" class="font-medium text-gray-600">kLa_a</label><input type="number" id="kLa_a" value="1.2" step="0.1" class="w-full p-1 border rounded-md mt-1"></div>
+                                        <div><label for="kLa_b" class="font-medium text-gray-600">kLa_b</label><input type="number" id="kLa_b" value="0.5" step="0.1" class="w-full p-1 border rounded-md mt-1"></div>
+
+                                        <div><label for="base_O2_sat_conc" class="font-medium text-gray-600">Base O2 Sat. (g/L)</label><input type="number" id="base_O2_sat_conc" value="0.007" step="0.001" class="w-full p-1 border rounded-md mt-1"></div>
+                                        <div class="parameter-slider">
+                                            <div class="flex items-center justify-between mb-1">
+                                                <label for="DO_setpoint" class="font-medium text-gray-600">DO Setpoint (%)</label>
+                                                <div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Target dissolved oxygen level for the PID controller.</div></div>
+                                            </div>
+                                            <div class="flex items-center space-x-4"><input type="range" id="DO_setpoint" min="0" max="100" step="1" value="30" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"><span id="DO_setpointValue" class="font-mono text-sm p-2 bg-gray-100 rounded-md w-20 text-center">30</span></div>
+                                        </div>
+                                        
+                                        <div class="col-span-2 mt-2 pt-2 border-t">
+                                            <div class="flex items-center justify-between mb-1">
+                                                <label for="agitationControlMode" class="font-medium text-gray-600">Agitation Control Mode</label>
+                                                <div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Algorithm to control stirrer speed for DO.</div></div>
+                                            </div>
+                                            <select id="agitationControlMode" class="w-full p-1.5 border rounded-md">
+                                                <option value="pid" selected>PID Control</option>
+                                                <option value="step">Step Control</option>
+                                            </select>
+                                        </div>
+
+                                        <div id="do-pid-control-section" class="col-span-2 grid grid-cols-2 gap-x-4 gap-y-3">
+                                            <div><label for="pid_kc_do" class="font-medium text-gray-600">Gain (K_c)</label><input type="number" id="pid_kc_do" value="1" step="0.5" class="w-full p-1 border rounded-md mt-1"></div>
+                                            <div><label for="pid_tau_i_do" class="font-medium text-gray-600">Integral Time (τ_i)</label><input type="number" id="pid_tau_i_do" value="15" step="1" class="w-full p-1 border rounded-md mt-1"></div>
+                                            <div><label for="pid_tau_d_do" class="font-medium text-gray-600">Derivative Time (τ_d)</label><input type="number" id="pid_tau_d_do" value="0.1" step="0.05" class="w-full p-1 border rounded-md mt-1"></div>
+                                            <div><label for="pid_deadband_do" class="font-medium text-gray-600">Deadband (%)</label><input type="number" id="pid_deadband_do" value="1" step="0.5" class="w-full p-1 border rounded-md mt-1"></div>
+                                            <div class="col-span-2 mt-1 p-2 bg-gray-100 rounded-lg text-xs text-gray-600">
+                                                <strong>Tuning Tip:</strong> If Agitation/DO swings wildly, decrease <strong>K_c</strong> or increase <strong>τ_i</strong>. Use a small <strong>τ_d</strong> to anticipate changes and reduce overshoot.
+                                            </div>
+                                        </div>
+
+                                        <div id="do-step-control-section" style="display:none;" class="col-span-2">
+                                            <label for="dN" class="font-medium text-gray-600">dN (rpm/time-step)</label><input type="number" id="dN" value="10" step="5" class="w-full p-1 border rounded-md mt-1">
+                                        </div>
+                                        
+                                        <div class="col-span-2 mt-2 pt-2 border-t">
+                                            <div class="flex items-center justify-between">
+                                                <label for="enable_o2_enrichment" class="font-medium text-gray-600">Enable O₂ Enrichment</label>
+                                                <input type="checkbox" id="enable_o2_enrichment" class="h-4 w-4 rounded border-gray-300 text-green-600 focus:ring-green-500">
+                                            </div>
+                                        </div>
+                                        <div id="o2-enrichment-section" class="col-span-2 grid grid-cols-2 gap-x-4 gap-y-3 hidden">
+                                            <div><label for="enrichment_trigger_time" class="font-medium text-gray-600">Trigger Time (hr)</label><input type="number" id="enrichment_trigger_time" value="1.0" step="0.1" class="w-full p-1 border rounded-md mt-1"></div>
+                                            <div><label for="final_o2_percent" class="font-medium text-gray-600">Final O₂ (%)</label><input type="number" id="final_o2_percent" value="50" step="5" min="21" max="100" class="w-full p-1 border rounded-md mt-1"></div>
+                                        </div>
+
+                                        <div><label for="Y_XO2" class="font-medium text-gray-600">Y_X/O2 (g/g)</label><input type="number" id="Y_XO2" value="30.0" step="0.1" class="w-full p-1 border rounded-md mt-1"></div>
+                                        <div><label for="m_O2" class="font-medium text-gray-600">m_O2</label><input type="number" id="m_O2" value="0.002" step="0.001" class="w-full p-1 border rounded-md mt-1"></div>
+                                        <div><label for="Y_PO2" class="font-medium text-gray-600">Y_P/O2 (g/g)</label><input type="number" id="Y_PO2" value="25.0" step="0.1" class="w-full p-1 border rounded-md mt-1"></div>
+                                        <div><label for="N_min" class="font-medium text-gray-600">N_min (rpm)</label><input type="number" id="N_min" value="400" step="50" class="w-full p-1 border rounded-md mt-1"></div>
+                                        <div><label for="N_max" class="font-medium text-gray-600">N_max (rpm)</label><input type="number" id="N_max" value="1200" step="50" class="w-full p-1 border rounded-md mt-1"></div>
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1">
+                                                <label for="tau_OUR" class="font-medium text-gray-600">τ_OUR (hr)</label>
+                                                <div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Metabolic response time. A small value means cells react instantly to substrate changes; a larger value smooths the DO curve.</div></div>
+                                            </div>
+                                            <input type="number" id="tau_OUR" value="0.1" step="0.01" class="w-full p-1 border rounded-md">
+                                        </div>
+                                    </div>
+                                </details>
+                            </div>
+
+                            <div class="rounded-lg border border-gray-200 p-4">
+                                <details>
+                                    <summary class="text-lg font-semibold text-gray-700 mb-3">pH Control</summary>
+                                    <div class="grid grid-cols-2 gap-x-4 gap-y-3 pt-3 text-sm">
+                                        <div>
+                                            <div class="flex items-center justify-between mb-1">
+                                                <label for="pH_control_mode" class="font-medium text-gray-600">pH Control Mode</label>
+                                                <div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Algorithm to control pH.</div></div>
+                                            </div>
+                                            <select id="pH_control_mode" class="w-full p-1.5 border rounded-md">
+                                                <option value="off">Off</option>
+                                                <option value="on-off">On/Off</option>
+                                                <option value="pid" selected>PID Control</option>
+                                            </select>
+                                        </div>
+                                        <div><label for="acid_conc_in" class="font-medium text-gray-600">Acid Conc. (mmol/L)</label><input type="number" id="acid_conc_in" value="9000" step="100" class="w-full p-1 border rounded-md mt-1"></div>
+                                        <div><label for="base_conc_in" class="font-medium text-gray-600">Base Conc. (mmol/L)</label><input type="number" id="base_conc_in" value="9000" step="100" class="w-full p-1 border rounded-md mt-1"></div>
+                                        <div class="col-span-2"><label for="buffer_capacity" class="font-medium text-gray-600">Buffer Capacity (mmol/L/pH)</label><input type="number" id="buffer_capacity" value="50" step="5" class="w-full p-1 border rounded-md mt-1"></div>
+                                        
+                                        <div id="ph-pid-control-section" class="col-span-2 grid grid-cols-2 gap-x-4 gap-y-3">
+                                            <div><label for="pid_kc_ph" class="font-medium text-gray-600">Gain (K_c)</label><input type="number" id="pid_kc_ph" value="5" step="1" class="w-full p-1 border rounded-md mt-1"></div>
+                                            <div><label for="pid_tau_i_ph" class="font-medium text-gray-600">Integral Time (τ_i)</label><input type="number" id="pid_tau_i_ph" value="5" step="1" class="w-full p-1 border rounded-md mt-1"></div>
+                                            <div><label for="pid_tau_d_ph" class="font-medium text-gray-600">Derivative Time (τ_d)</label><input type="number" id="pid_tau_d_ph" value="0.05" step="0.01" class="w-full p-1 border rounded-md mt-1"></div>
+                                            <div><label for="pid_deadband_ph" class="font-medium text-gray-600">Deadband</label><input type="number" id="pid_deadband_ph" value="0.05" step="0.01" class="w-full p-1 border rounded-md mt-1"></div>
+                                            <div class="col-span-2 mt-1 p-2 bg-gray-100 rounded-lg text-xs text-gray-600">
+                                                <strong>Tuning Tip:</strong> Use <strong>τ_d</strong> to prevent overshoot. If pH is slow to recover, increase <strong>K_c</strong>. If it oscillates, decrease <strong>K_c</strong> and increase <strong>τ_i</strong>.
+                                            </div>
+                                        </div>
+
+                                        <div id="ph-on-off-control-section" style="display:none;" class="col-span-2 grid grid-cols-2 gap-x-4 gap-y-3">
+                                            <div><label for="pH_on_off_rate" class="font-medium text-gray-600">Correction Rate (mL/L/hr)</label><input type="number" id="pH_on_off_rate" value="50" step="10" class="w-full p-1 border rounded-md mt-1"></div>
+                                            <div><label for="ph_deadband" class="font-medium text-gray-600">Deadband</label><input type="number" id="ph_deadband" value="0.1" step="0.05" class="w-full p-1 border rounded-md mt-1"></div>
+                                            <div class="col-span-2 mt-1 p-2 bg-gray-100 rounded-lg text-xs text-gray-600">
+                                                <strong>Deadband Tip:</strong> A small deadband (e.g., 0.1) prevents the controller from rapidly switching on and off, which can wear out equipment.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </details>
+                            </div>
+
+                            <div class="rounded-lg border border-gray-200 p-4">
+                                <details>
+                                    <summary class="text-lg font-semibold text-gray-700 mb-3">Uncertainty & Simulation</summary>
+                                    <div class="space-y-4 pt-3 text-sm">
+                                        <div class="parameter-slider">
+                                            <div class="flex items-center justify-between mb-1">
+                                                <label for="deltaTime" class="font-medium text-gray-600">Simulation Time Step (hr)</label>
+                                                <div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Computational step size. Smaller is more accurate but slower. Crucial for stable DO simulation.</div></div>
+                                            </div>
+                                            <div class="flex items-center space-x-4"><input type="range" id="deltaTime" min="0.05" max="0.5" step="0.05" value="0.25" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"><span id="deltaTimeValue" class="font-mono text-sm p-2 bg-gray-100 rounded-md w-20 text-center">0.25</span></div>
+                                        </div>
+                                        <div class="parameter-slider">
+                                            <div class="flex items-center justify-between mb-1">
+                                                <label for="paramUncertainty" class="font-medium text-gray-600">Parameter Uncertainty (%)</label>
+                                                <div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Simulates imperfect knowledge. At the start of the run, randomly adjusts key biological parameters (like µ_max, Yields) by up to this percentage.</div></div>
+                                            </div>
+                                            <div class="flex items-center space-x-4"><input type="range" id="paramUncertainty" min="0" max="25" step="1" value="0" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"><span id="paramUncertaintyValue" class="font-mono text-sm p-2 bg-gray-100 rounded-md w-20 text-center">0</span></div>
+                                        </div>
+                                        <div class="parameter-slider">
+                                            <div class="flex items-center justify-between mb-1">
+                                                <label for="bioVariability" class="font-medium text-gray-600">Growth Variability (%)</label>
+                                                <div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Simulates inherent randomness in cell growth using a stochastic differential equation. Higher values lead to a less predictable growth curve.</div></div>
+                                            </div>
+                                            <div class="flex items-center space-x-4"><input type="range" id="bioVariability" min="0" max="3" step="0.1" value="0" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"><span id="bioVariabilityValue" class="font-mono text-sm p-2 bg-gray-100 rounded-md w-20 text-center">0.0</span></div>
+                                        </div>
+                                        <div class="parameter-slider">
+                                            <div class="flex items-center justify-between mb-1">
+                                                <label for="prodVariability" class="font-medium text-gray-600">Production Variability (%)</label>
+                                                <div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Simulates random fluctuations in the specific production rate (qp), independent of growth variability.</div></div>
+                                            </div>
+                                            <div class="flex items-center space-x-4"><input type="range" id="prodVariability" min="0" max="3" step=".1" value="0" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"><span id="prodVariabilityValue" class="font-mono text-sm p-2 bg-gray-100 rounded-md w-20 text-center">0</span></div>
+                                        </div>
+                                        <div class="parameter-slider">
+                                            <div class="flex items-center justify-between mb-1">
+                                                <label for="processNoise" class="font-medium text-gray-600">Process Noise (%)</label>
+                                                <div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Simulates actuator imprecision, like fluctuating pump feed rates. Noise is applied to all feed profiles (F1, F2, Fi, Base, Acid).</div></div>
+                                            </div>
+                                            <div class="flex items-center space-x-4"><input type="range" id="processNoise" min="0" max="15" step="1" value="0" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"><span id="processNoiseValue" class="font-mono text-sm p-2 bg-gray-100 rounded-md w-20 text-center">0</span></div>
+                                        </div>
+                                        <div class="parameter-slider">
+                                            <div class="flex items-center justify-between mb-1">
+                                                <label for="sensorNoiseDO" class="font-medium text-gray-600">DO Sensor Noise (%)</label>
+                                                <div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Simulates electrical noise or small bubbles affecting the DO probe. The PID controller will react to this noisy signal.</div></div>
+                                            </div>
+                                            <div class="flex items-center space-x-4"><input type="range" id="sensorNoiseDO" min="0" max="5" step="0.1" value="0" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"><span id="sensorNoiseDOValue" class="font-mono text-sm p-2 bg-gray-100 rounded-md w-20 text-center">0.0</span></div>
+                                        </div>
+                                        <div class="parameter-slider">
+                                            <div class="flex items-center justify-between mb-1">
+                                                <label for="sensorNoiseTemp" class="font-medium text-gray-600">Temp. Noise (°C)</label>
+                                                <div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Simulates fluctuations around the temperature setpoint. Affects the actual temperature used in kinetic calculations.</div></div>
+                                            </div>
+                                            <div class="flex items-center space-x-4"><input type="range" id="sensorNoiseTemp" min="0" max="1" step="0.05" value="0" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"><span id="sensorNoiseTempValue" class="font-mono text-sm p-2 bg-gray-100 rounded-md w-20 text-center">0.00</span></div>
+                                        </div>
+                                        <div class="parameter-slider">
+                                            <div class="flex items-center justify-between mb-1">
+                                                <label for="sensorNoisePH" class="font-medium text-gray-600">pH Sensor Noise</label>
+                                                <div class="tooltip-container"><span class="tooltip-icon">?</span><div class="tooltip-content">Simulates noise on the pH probe reading. The PID controller will react to this noisy signal.</div></div>
+                                            </div>
+                                            <div class="flex items-center space-x-4"><input type="range" id="sensorNoisePH" min="0" max="0.5" step="0.02" value="0" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"><span id="sensorNoisePHValue" class="font-mono text-sm p-2 bg-gray-100 rounded-md w-20 text-center">0.00</span></div>
+                                        </div>
+                                    </div>
+                                </details>
+                            </div>
+                            
+                            <button id="runSimulationBtn" class="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 transition duration-300 text-lg relative overflow-hidden">
+                                <span class="relative z-10">Run Simulation</span>
+                                <div id="progress-bar-container" class="absolute bottom-0 left-0 w-full h-1 bg-green-800/30 hidden">
+                                <div id="progress-bar" class="bg-white h-full" style="width: 0%; transition: width 0.4s ease-out;"></div>
+                                </div>
+                            </button>
+                        </div>
+                        <div class="lg:col-span-2 relative">
+                            <div class="lg:sticky lg:top-8 space-y-8">
+                                
+                                <div id="kpi-card" class="bg-white p-4 rounded-lg shadow-md border border-gray-200">
+                                    <h3 class="text-xl font-semibold text-gray-800 mb-3 border-b pb-2">Results Summary</h3>
+                                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+                                        <div>
+                                            <p class="text-sm text-gray-500">Final Biomass</p>
+                                            <p id="kpi-biomass" class="text-2xl font-bold text-green-600">--</p>
+                                            <p class="text-xs text-gray-400">g/L</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm text-gray-500">Final Product</p>
+                                            <p id="kpi-product" class="text-2xl font-bold text-green-600">--</p>
+                                            <p class="text-xs text-gray-400">g/L</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm text-gray-500">Productivity</p>
+                                            <p id="kpi-productivity" class="text-2xl font-bold text-green-600">--</p>
+                                            <p class="text-xs text-gray-400">g/L/hr</p>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm text-gray-500">Final Volume</p>
+                                            <p id="kpi-volume" class="text-2xl font-bold text-green-600">--</p>
+                                            <p class="text-xs text-gray-400">L</p>
+                                        </div>
+                                    </div>
+                                    <div id="baseline-controls" class="mt-4 pt-4 border-t flex items-center justify-center gap-4">
+                                        <button id="saveBaselineBtn" class="bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-blue-600 transition duration-300 text-sm">
+                                            Save as Baseline
+                                        </button>
+                                        <button id="clearBaselineBtn" class="bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg hover:bg-gray-400 transition duration-300 text-sm" style="display: none;">
+                                            Clear Baseline
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h3 class="text-xl font-semibold text-gray-800 mb-2">Biomass & Product</h3>
+                                    <div class="chart-container" style="position: relative; height:40vh; width:100%;"><canvas id="mainChart"></canvas></div>
+                                </div>
+                                <div>
+                                    <h3 class="text-xl font-semibold text-gray-800 mb-2">Substrates & Growth Rate</h3>
+                                    <div class="chart-container" style="position: relative; height:40vh; width:100%;"><canvas id="substrateAndGrowthChart"></canvas></div>
+                                </div>
+                                <div>
+                                    <h3 class="text-xl font-semibold text-gray-800 mb-2">Feeds & Volume</h3>
+                                    <div class="chart-container" style="position: relative; height:40vh; width:100%;"><canvas id="feedAndVolumeChart"></canvas></div>
+                                </div>
+                                <div>
+                                    <h3 class="text-xl font-semibold text-gray-800 mb-2">DO & Agitation</h3>
+                                    <div class="chart-container" style="position: relative; height:40vh; width:100%;"><canvas id="doAndAgitationChart"></canvas></div>
+                                </div>
+                                <div>
+                                    <h3 class="text-xl font-semibold text-gray-800 mb-2">pH Control</h3>
+                                    <div class="chart-container" style="position: relative; height:40vh; width:100%;"><canvas id="pHAndBaseChart"></canvas></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="cookbook-content" class="tab-content hidden prose max-w-none">
+                </div>
+                <div id="about-content" class="tab-content hidden prose max-w-none">
+                    <h2 class="text-3xl font-bold text-green-800 mb-4">A Potion Master's Guide</h2>
+                    <p class="text-lg text-gray-600">Welcome, apprentice! This is not just any simulator; it is a magical vessel where the arcane arts of biotechnology and fermentation come to life. Use this guide to master the fundamental spells and advanced enchantments needed to brew the perfect potion.</p>
+                    
+                    <hr class="my-8">
+
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="flex-shrink-0 w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                            <svg class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                        </div>
+                        <h3 class="text-2xl font-semibold text-green-700 m-0">Step 1: The Recipe's Foundation</h3>
+                    </div>
+                    <p>Every great potion begins with a foundational plan. Your first two choices—the <strong>Fermentation Mode</strong> and the <strong>Product Induction Strategy</strong>—define the entire course of the brew.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                        <div>
+                            <h4 class="text-lg font-semibold">Fermentation Mode</h4>
+                            <ul class="list-disc list-inside mt-2 space-y-1">
+                                <li><strong>Batch:</strong> Simple and direct. Add all ingredients at the start and let the magic unfold.</li>
+                                <li><strong>Fed-Batch:</strong> Strategic and powerful. Continuously add ingredients over time to reach higher yields.</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold">Induction Strategy</h4>
+                            <p class="mt-2">This is the core "spell" that tells your microbes <em>when</em> to create the product, based on triggers like adding a catalyst (Inducer), removing a blocker (Repressor), or even near-starvation (Carbon Limitation).</p>
+                        </div>
+                    </div>
+
+                    <hr class="my-8">
+
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="flex-shrink-0 w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                            <svg class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.878-5.878m0 0a3.004 3.004 0 01-4.243-4.243 3.004 3.004 0 014.243 0zM21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        </div>
+                        <h3 class="text-2xl font-semibold text-green-700 m-0">Step 2: Fine-Tuning the Spell</h3>
+                    </div>
+                    <p>True mastery comes from understanding the subtle forces at play. These parameters allow you to manipulate the environment and the very nature of your microbes.</p>
+                    <ul class="list-disc list-inside mt-4 space-y-2">
+                        <li><strong>The Cell's Spellbook:</strong> Define your microbe's inherent abilities. <code>µ_max</code> sets its maximum growth speed, while Yield Coefficients (<code>Y_...</code>) determine its efficiency.</li>
+                        <li><strong>Environmental Stress:</strong> Microbes are sensitive to <strong>Temperature</strong> and <strong>pH</strong>. Push them too far from their optimal conditions, and their magic will wane.</li>
+                        <li><strong>Product Inhibition (<code>P_crit</code>):</strong> Beware a potion too potent! As your product accumulates, it can become toxic to its creators, halting all growth even if food remains.</li>
+                        <li><strong>Catalyst Effects (<code>m_I</code>):</strong> The inducer that starts your reaction might not last forever. If it gets consumed, your production will mysteriously cease.</li>
+                        <li><strong>Life and Death (<code>k_d</code>):</strong> Microbes aren't immortal. The death rate (<code>k_d</code>) causes the population to decline over time, especially during starvation. When cells lyse, their nutrients can be recycled (<code>Y_S1/lysis</code>), providing a last bit of sustenance for the survivors.</li>
+                    </ul>
+
+                    <hr class="my-8">
+                    
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="flex-shrink-0 w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                            <svg class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M12 6V3m0 18v-3M5.636 5.636l-1.414-1.414m14.142 14.142l-1.414-1.414M18.364 5.636l-1.414 1.414m-11.314 11.314l-1.414 1.414"></path></svg>
+                        </div>
+                        <h3 class="text-2xl font-semibold text-green-700 m-0">Step 3: The Automated Cauldron</h3>
+                    </div>
+                    <p>The best Potion Masters don't stir by hand. The cauldron is enchanted with powerful automation charms that mimic real-world control systems.</p>
+                    <ul class="list-disc list-inside mt-4 space-y-2">
+                        <li><strong>DO-Stat Feeding:</strong> Instead of guessing, use this "smart" feed strategy. The cauldron senses when the microbes are hungry and adds food automatically, preventing waste and stress.</li>
+                        <li><strong>PID Controllers:</strong> Sophisticated algorithms constantly adjust <strong>Agitation Speed</strong> and <strong>pH Correction Feeds</strong> to keep the environment perfectly stable, allowing your microbes to focus on their magical work.</li>
+                    </ul>
+
+                    <hr class="my-8">
+
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="flex-shrink-0 w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                            <svg class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl font-semibold text-green-700 m-0">Step 4: Taming the Unpredictable</h3>
+                    </div>
+                    <p>Even the most skilled Potion Master knows that magic is not always predictable. The real world is full of randomness. This simulator allows you to embrace that chaos to create more realistic brews.</p>
+                    <ul class="list-disc list-inside mt-4 space-y-2">
+                        <li><strong>Biological Variability:</strong> No two microbes are identical twins. This setting introduces random fluctuations to the growth and production rates, simulating the inherent stochasticity of life. This is why no two experiments are ever exactly the same!</li>
+                        <li><strong>Process & Sensor Noise:</strong> Your cauldron and its tools are not perfect. Pumps may fluctuate slightly, and magical sensors can be affected by bubbles or electrical spirits. This noise adds a layer of instrumental realism, forcing your control algorithms to react to an imperfect world.</li>
+                        <li><strong>Parameter Uncertainty:</strong> What if your ancient grimoire is slightly inaccurate? This allows you to simulate having imperfect knowledge of the true biological parameters, testing how robust your recipe is against the unknown.</li>
+                    </ul>
+
+                    <p class="mt-8 text-sm">If the cauldron spills over on you, contact <a href="https://www.linkedin.com/in/anupam-chowdhury-46629795" target="_blank" rel="noopener noreferrer" class="text-green-600 hover:text-green-700 font-medium">Anupam Chowdhury</a>.</p>
+                </div>
+                <div id="model-content" class="tab-content hidden prose max-w-none">
+                    <h2 class="text-3xl font-bold text-green-800 mb-4">The Grimoire of Equations</h2>
+                    <p class="text-lg text-gray-600">The cauldron's behavior is governed by a system of ordinary differential equations (ODEs). These formulae dictate the kinetics of growth, the magic of production, and the balance of ingredients within the brew. The model is structured in three layers: the per-cell kinetic rates, the overall mass balances in the cauldron, and the environmental control systems.</p>
+                    
+                    <hr class="my-8">
+
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="flex-shrink-0 w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                            
+                        </div>
+                        <h3 class="text-2xl font-semibold text-green-700 m-0">Part 1: The Cell's Engine - Microbial Kinetics</h3>
+                    </div>
+                    <p>This layer describes the fundamental rates at which individual cells grow and create products based on their immediate surroundings. These are the "per-cell" instructions.</p>
+
+                    <h4 class="text-xl font-semibold mt-6">A. Specific Growth Rate ($\mu$)</h4>
+                    <p>The specific growth rate, $\mu$ (1/hr), is the cornerstone of the simulation. It's determined by the availability of substrates, the concentration of dissolved oxygen, and other environmental conditions like pH and temperature.</p>
+                    
+                    <h5 class="text-lg font-semibold mt-4">Oxygen's Influence: Metabolic Shifting</h5>
+                    <p>Cells dynamically shift their metabolism based on dissolved oxygen ($C_{O2}$). We model this with two competing factors:</p>
+                    <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-lg my-4 overflow-x-auto">
+                        <p><b>Aerobic Factor ($f_{O2,aerobic}$):</b> $$f_{O2,aerobic} = \frac{C_{O2}}{K_{O2} + C_{O2}}$$</p>
+                        <p class="mt-2"><b>Anaerobic Factor ($f_{O2,anaerobic}$):</b> $$f_{O2,anaerobic} = \frac{K_{O2,ana\_inhib}}{K_{O2,ana\_inhib} + C_{O2}}$$</p>
+                    </div>
+                     <div class="mt-4">
+                        <h5 class="font-semibold">Parameter Definitions:</h5>
+                        <ul class="list-disc list-inside text-sm space-y-1">
+                            <li><b>$K_{O2}$</b>: Oxygen affinity constant for aerobic metabolism.</li>
+                            <li><b>$K_{O2,ana\_inhib}$</b>: Oxygen concentration that causes 50% inhibition of anaerobic pathways. A lower value means anaerobic metabolism is more sensitive to oxygen.</li>
+                        </ul>
+                    </div>
+
+                    <h5 class="text-lg font-semibold mt-4">Calculating the Total Growth Rate</h5>
+                    <p>These oxygen factors scale the maximum potential growth rates on each substrate. These are then combined and adjusted by environmental factors to get the final growth rate.</p>
+                    <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-lg my-4 overflow-x-auto">
+                        <p><b>Growth on Primary Carbon (S1):</b> $$\mu_{S1} = \left( \mu_{max,S1,aerobic} \cdot f_{O2,aerobic} + \mu_{max,S1,anaerobic} \cdot f_{O2,anaerobic} \right) \cdot \frac{S_1}{K_{S1} + S_1}$$</p>
+                        <p class="mt-2"><b>Growth on Secondary Carbon (S2):</b> $$\mu_{S2} = \left( \mu_{max,S2,aerobic} \cdot f_{O2,aerobic} \right) \cdot \frac{S_2}{K_{S2} + S_2}$$</p>
+                        <p class="mt-4"><b>Environmental Factors ($f(pH), f(T)$):</b> These are Cardinal models that return a value between 0 and 1.</p>
+                        $$f(pH) = \frac{(pH - pH_{min})(pH - pH_{max})}{(pH - pH_{min})(pH - pH_{max}) - (pH - pH_{opt})^2}$$
+                        $$f(T) = \frac{(T - T_{max})(T - T_{min})^2}{(T_{opt} - T_{min})[(T_{opt} - T_{min})(T - T_{opt}) - (T_{opt} - T_{max})(T_{opt} + T_{min} - 2T)]}$$
+                        <p class="mt-4"><b>Product Inhibition ($f(P)$):</b> High product concentrations can be toxic and inhibit growth. This is modeled with an additional term:</p>
+                        $$f(P) = \left(1 - \frac{P}{P_{crit}}\right)^{n_P}$$
+                        <p class="mt-4 font-semibold text-green-800">Total Specific Growth Rate:</p>
+                        $$\mu = (\mu_{S1} + \mu_{S2}) \cdot f(I) \cdot f(pH) \cdot f(T) \cdot f(P)$$
+                    </div>
+                    <div class="mt-4">
+                        <h5 class="font-semibold">Parameter Definitions:</h5>
+                        <ul class="list-disc list-inside text-sm space-y-1">
+                            <li><b>$\mu_{max,S1,aerobic}, \mu_{max,S2,aerobic}$</b>: Maximum specific growth rate on S1 and S2 under optimal aerobic conditions.</li>
+                            <li><b>$\mu_{max,S1,anaerobic}$</b>: Maximum specific growth rate on S1 under optimal anaerobic conditions.</li>
+                            <li><b>$K_{S1}, K_{S2}$</b>: Substrate affinity constants for growth.</li>
+                            <li><b>$f(I)$</b>: Inducer inhibition factor for growth, typically $\frac{K_{Ii}}{K_{Ii} + I}$.</li>
+                            <li><b>$P_{crit}$</b>: The critical product concentration at which growth stops.</li>
+                            <li><b>$n_P$</b>: The exponent for product inhibition, controlling the sharpness of the effect.</li>
+                        </ul>
+                    </div>
+
+                    <h4 class="text-xl font-semibold mt-6">B. Specific Production Rate ($q_p$)</h4>
+                    <p>Similar to growth, the specific production rate ($q_p$) depends on substrates, oxygen, and its own unique set of environmental conditions for temperature and pH. These factors are combined to determine the final rate.</p>
+
+                    <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-lg my-4 overflow-x-auto">
+                        <p><b>Blended Maximum Production Rate ($q_{p,max,blended}$):</b></p>
+                        $$q_{p,max,blended} = q_{p,max,aerobic} \cdot f_{O2,aerobic} + q_{p,max,anaerobic} \cdot f_{O2,anaerobic}$$
+
+                        <p class="mt-4"><b>Environmental Factors for Production ($f_p(pH), f_p(T)$):</b></p>
+                        <p>These use the same Cardinal model structure as growth, but with parameters specific to production (denoted with a subscript 'p').</p>
+                        $$f_p(pH) = \frac{(pH - pH_{min,p})(pH - pH_{max,p})}{(pH - pH_{min,p})(pH - pH_{max,p}) - (pH - pH_{opt,p})^2}$$
+                        $$f_p(T) = \frac{(T - T_{max,p})(T - T_{min,p})^2}{(T_{opt,p} - T_{min,p})[(T_{opt,p} - T_{min,p})(T - T_{opt,p}) - (T_{opt,p} - T_{max,p})(T_{opt,p} + T_{min,p} - 2T)]}$$
+                        
+                        <p class="mt-4">This blended rate is then multiplied by terms specific to the induction strategy and the environmental factors:</p>
+                        
+                        <p class="mt-2"><b>Constitutive:</b> $$q_p = q_{p,max,blended} \left( \frac{S_1}{K_{p,S1} + S_1} \right) \cdot f_p(pH) \cdot f_p(T)$$</p>
+                        <p class="mt-2"><b>Induction Only:</b> $$q_p = q_{p,max,blended} \left( \frac{S_1}{K_{p,S1} + S_1} \right) \left( \frac{I}{K_{p,I} + I} \right) \cdot f_p(pH) \cdot f_p(T)$$</p>
+                        <p class="mt-2"><b>Second Substrate (S2) Only:</b> $$q_p = q_{p,max,blended} \left( \frac{S_2}{K_{p,S2} + S_2} \right) \cdot f_p(pH) \cdot f_p(T)$$</p>
+                        <p class="mt-2"><b>Co-feed:</b> $$q_p = q_{p,max,blended} \left( \frac{S_1}{K_{p,S1} + S_1} \right) \left( \frac{S_2}{K_{p,S2} + S_2} \right) \cdot f_p(pH) \cdot f_p(T)$$</p>
+                        <p class="mt-2"><b>Induction + Co-feed:</b> $$q_p = q_{p,max,blended} \left( \frac{S_1}{K_{p,S1} + S_1} \right) \left( \frac{S_2}{K_{p,S2} + S_2} \right) \left( \frac{I}{K_{p,I} + I} \right) \cdot f_p(pH) \cdot f_p(T)$$</p>
+                        <p class="mt-2"><b>Repressor-based:</b> $$q_p = q_{p,max,blended} \left( \frac{S_1}{K_{p,S1} + S_1} \right) \left( \frac{K_{pR}^{n_R}}{K_{pR}^{n_R} + R^{n_R}} \right) \cdot f_p(pH) \cdot f_p(T)$$</p>
+                        <p class="mt-2"><b>Carbon Limitation:</b> $$q_p = q_{p,max,blended} \left( \frac{S_1}{K_{p,S1} + S_1} \right) \left( \frac{K_{pS1,lim}^{n_{S1,lim}}}{K_{pS1,lim}^{n_{S1,lim}} + S_1^{n_{S1,lim}}} \right) \cdot f_p(pH) \cdot f_p(T)$$</p>
+                    </div>
+
+                    <div class="mt-4">
+                        <h5 class="font-semibold">Parameter Definitions:</h5>
+                        <ul class="list-disc list-inside text-sm space-y-1">
+                            <li><b>$q_{p,max,aerobic}, q_{p,max,anaerobic}$</b>: The maximum specific production rate under aerobic/anaerobic conditions.</li>
+                            <li><b>$K_{p,S1}, K_{p,S2}, K_{p,I}$</b>: Affinity constants for production related to S1, S2, and Inducer (I).</li>
+                            <li><b>$K_{pR}, n_R$</b>: The Repressor constant and Hill Coefficient for repression.</li>
+                            <li><b>$K_{pS1,lim}, n_{S1,lim}$</b>: The S1 limitation constant and Hill Coefficient for induction by limitation.</li>
+                            <li><b>$pH_{opt,p}, pH_{min,p}, pH_{max,p}$</b>: The optimal, minimum, and maximum pH for product formation.</li>
+                            <li><b>$T_{opt,p}, T_{min,p}, T_{max,p}$</b>: The optimal, minimum, and maximum temperature for product formation.</li>
+                        </ul>
+                    </div>
+
+                    <hr class="my-8">
+
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="flex-shrink-0 w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                            
+                        </div>
+                        <h3 class="text-2xl font-semibold text-green-700 m-0">Part 2: The Cauldron's Contents - Mass Balances</h3>
+                    </div>
+                    <p>This layer scales up the per-cell rates to describe the change in total amounts of biomass, substrates, and product within the entire volume of the cauldron over time.</p>
+                    
+                    <h5 class="text-lg font-semibold mt-4">Blended Yield Coefficients</h5>
+                    <p>The efficiency of converting substrate to useful products changes with oxygen availability. We calculate effective, blended yields that are weighted averages of the aerobic and anaerobic values.</p>
+                     <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-lg my-4 overflow-x-auto">
+                        <p><b>Effective Biomass Yield ($Y_{X/S1,eff}$):</b> $$Y_{X/S1,eff} = \frac{Y_{X/S1,aerobic} f_{O2,aerobic} + Y_{X/S1,anaerobic} f_{O2,anaerobic}}{f_{O2,aerobic} + f_{O2,anaerobic} + \epsilon}$$</p>
+                        <p class="mt-2"><b>Effective Product Yield ($Y_{P/S1,eff}$):</b> $$Y_{P/S1,eff} = \frac{Y_{P/S1,aerobic} f_{O2,aerobic} + Y_{P/S1,anaerobic} f_{O2,anaerobic}}{f_{O2,aerobic} + f_{O2,anaerobic} + \epsilon}$$</p>
+                        <p class="mt-2"><b>Effective Maintenance ($m_{S1,eff}$):</b> $$m_{S1,eff} = \frac{m_{S1,aerobic} f_{O2,aerobic} + m_{S1,anaerobic} f_{O2,anaerobic}}{f_{O2,aerobic} + f_{O2,anaerobic} + \epsilon}$$</p>
+                    </div>
+
+                    <h5 class="text-lg font-semibold mt-4">Core Balance Equations</h5>
+                    <p>The change in each component is its inflow minus outflow plus what's generated minus what's consumed.</p>
+                     <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-lg my-4 overflow-x-auto">
+                        <p><b>Biomass (X):</b> $$\frac{dX}{dt} = (\mu - k_d) \cdot X - \frac{X}{V} (F_{total})$$</p>
+                        <p class="mt-2"><b>Primary Substrate ($S_1$):</b> $$\frac{dS_1}{dt} = \frac{F_1 S_{1,in}}{V} - \left( \frac{\mu_{S1}}{Y_{X/S1,eff}} + m_{S1,eff} \right) X - \frac{q_p}{Y_{P/S1,eff}} X + (k_d \cdot X \cdot Y_{S1/lysis}) - \frac{S_1}{V} (F_{total})$$</p>
+                        <p class="mt-2"><b>Secondary Substrate ($S_2$):</b> $$\frac{dS_2}{dt} = \frac{F_2 S_{2,in}}{V} - \frac{\mu_{S2}}{Y_{X/S2,aerobic}} X - \frac{q_p}{Y_{P/S2,aerobic}} X - \frac{S_2}{V} (F_{total})$$</p>
+                        <p class="mt-2"><b>Product (P):</b> $$\frac{dP}{dt} = q_p \cdot X - \frac{P}{V} (F_{total})$$</p>
+                    </div>
+                    <div class="mt-4">
+                        <h5 class="font-semibold">Parameter Definitions:</h5>
+                        <ul class="list-disc list-inside text-sm space-y-1">
+                             <li><b>$F_{total}$</b>: Sum of all incoming feed rates ($F_1+F_2+F_I+F_{base}+F_{acid}$).</li>
+                             <li><b>$Y_{...}, m_{...}$</b>: Various yield and maintenance coefficients for aerobic and anaerobic conditions.</li>
+                             <li><b>$k_d$</b>: The specific death rate (1/hr), a first-order constant representing the rate of cell decay.</li>
+                             <li><b>$Y_{S1/lysis}$</b>: The yield of substrate from lysis (g/g). Represents the fraction of dead biomass that is recycled back into a usable primary substrate (S1).</li>
+                        </ul>
+                    </div>
+                    <h4 class="text-xl font-semibold mt-6">Part 2A: Genetic Drift & Population Dynamics</h4>
+                    <p>To model genetic drift, the total biomass (X) is split into two competing populations: Producers ($X_p$) and Non-producers ($X_n$). Non-producers have a growth advantage ($\alpha_n$) but do not create product. They are generated from producers at a specific mutation rate ($k_m$).</p>
+                    <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-lg my-4 overflow-x-auto">
+                        <p><b>Total Biomass:</b> $$X_{total} = X_p + X_n$$</p>
+                        <p class="mt-2"><b>Growth Rate of Non-Producers:</b> $$\mu_n = \mu \cdot \alpha_n$$</p>
+                        <p class="mt-4 font-semibold text-green-800">Producer Biomass Balance ($X_p$):</p>
+                        $$\frac{dX_p}{dt} = (\mu \cdot X_p) - (k_d \cdot X_p) - (k_m \cdot X_p) - \left(\frac{X_p}{V} \cdot F_{total}\right)$$
+                        <p class="mt-4 font-semibold text-green-800">Non-Producer Biomass Balance ($X_n$):</p>
+                        $$\frac{dX_n}{dt} = (\mu_n \cdot X_n) + (k_m \cdot X_p) - (k_d \cdot X_n) - \left(\frac{X_n}{V} \cdot F_{total}\right)$$
+                    </div>
+                    
+                    <hr class="my-8">
+
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="flex-shrink-0 w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                            
+                        </div>
+                        <h3 class="text-2xl font-semibold text-green-700 m-0">Part 3: Environmental Control Systems</h3>
+                    </div>
+                    <p>This final layer models the physical systems and control algorithms that maintain the fermentation environment.</p>
+
+                    <h4 class="text-xl font-semibold mt-6">A. Dissolved Oxygen & Agitation Control</h4>
+                    <p>The DO concentration is a dynamic balance between the Oxygen Transfer Rate (OTR) from air and the Oxygen Uptake Rate (OUR) by the cells.</p>
+                    <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-lg my-4 overflow-x-auto">
+                        <p class="font-semibold text-green-800">DO Mass Balance:</p>
+                        $$\frac{dC_{O2}}{dt} = \underbrace{k_L a (C^{*}_{O2} - C_{O2})}_{\text{OTR}} - \underbrace{OUR_{current}}_{\text{OUR}}$$
+                        <p class="mt-4"><b>Mass Transfer Coefficient ($k_L a$):</b> $$k_L a = k_{La,c} \cdot N^{k_{La,a}} \cdot F_{air}^{k_{La,b}}$$</p>
+                        <p class="mt-4"><b>Target OUR ($OUR_{target}$):</b> Calculated from the actual aerobic components of metabolism.</p>
+                        $$OUR_{target} = \underbrace{\left[ \frac{\mu_{aerobic\_actual}}{Y_{X/O2}} + m_{O2} \right] X_{total}}_{\text{Growth & Maintenance}} + \underbrace{\left[ \frac{q_{p,aerobic\_actual}}{Y_{P/O2}} \right] X_p}_{\text{Production}} $$
+                        <p class="mt-4"><b>Dynamic OUR ($OUR_{current}$):</b> The actual OUR smoothly approaches the target, governed by a metabolic time constant, $\tau_{OUR}$.</p>
+                        $$\frac{d(OUR_{current})}{dt} = \frac{OUR_{target} - OUR_{current}}{\tau_{OUR}}$$
+                    </div>
+                    
+                    <h5 class="text-lg font-semibold mt-4">PID Controller for Agitation</h5>
+                    <p>To maintain the DO at its setpoint, a Proportional-Integral-Derivative (PID) controller adjusts the agitation speed ($N$). A deadband is used to prevent the controller from reacting to minor noise.</p>
+                    <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-lg my-4 overflow-x-auto">
+                        <p><b>Error:</b> $$e(t) = DO_{setpoint} - DO_{measured}(t)$$</p>
+                        <p class="mt-2"><b>Controller Output (if $|e(t)| > \text{Deadband}$):</b> $$ N(t) = K_{c,DO} e(t) + \frac{K_{c,DO}}{\tau_{i,DO}} \int_{0}^{t} e(t') dt' + K_{c,DO} \tau_{d,DO} \frac{de(t)}{dt} $$</p>
+                    </div>
+                     <div class="mt-4">
+                        <h5 class="font-semibold">Parameter Definitions:</h5>
+                        <ul class="list-disc list-inside text-sm space-y-1">
+                            <li><b>$\tau_{OUR}$</b>: The metabolic response time constant for OUR.</li>
+                            <li><b>$C^{*}_{O2}$</b>: The saturation concentration of oxygen in the liquid.</li>
+                            <li><b>$Y_{X/O2}, Y_{P/O2}, m_{O2}$</b>: Yield and maintenance coefficients for oxygen consumption.</li>
+                            <li><b>$K_{c,DO}$</b>: The controller gain (proportional term).</li>
+                            <li><b>$\tau_{i,DO}$</b>: The integral time constant.</li>
+                            <li><b>$\tau_{d,DO}$</b>: The derivative time constant.</li>
+                        </ul>
+                    </div>
+
+                    <h4 class="text-xl font-semibold mt-6">B. pH Dynamics & Control</h4>
+                    <p>As cells grow, they produce acidic byproducts. A control system adds base or acid to maintain the pH at a desired setpoint.</p>
+                    <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-lg my-4 overflow-x-auto">
+                         <p><b>Effective Acid Yield ($Y_{H/S1,eff}$):</b> This is a blended yield based on oxygen availability.</p>
+                         $$Y_{H/S1,eff} = \frac{Y_{H/S1,aerobic} f_{O2,aerobic} + Y_{H/S1,anaerobic} f_{O2,anaerobic}}{f_{O2,aerobic} + f_{O2,anaerobic} + \epsilon}$$
+                         <p class="mt-4"><b>Net Acid Accumulation:</b> $$\frac{d(\text{Total Acid})}{dt} = \left( \frac{\mu_{S1}}{Y_{X/S1,eff}} \cdot Y_{H/S1,eff} \cdot X \cdot V \right) - (F_{base} C_{base,in}) + (F_{acid} C_{acid,in})$$</p>
+                         <p class="mt-4"><b>pH Calculation:</b> $$pH_t = pH_{initial} - \frac{(\text{Total Acid}_t / V_t)}{\text{Buffer Capacity}}$$
+                    </div>
+
+                     <h5 class="text-lg font-semibold mt-4">PID Controller for pH</h5>
+                    <p>A PID controller calculates a required correction. If the output is positive, base is added; if negative, acid is added. Action is only taken if the error exceeds the deadband.</p>
+                    <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-lg my-4 overflow-x-auto">
+                        <p><b>Error:</b> $$e(t) = pH_{setpoint} - pH_{measured}(t)$$</p>
+                        <p class="mt-2"><b>Controller Output ($P_{out}$ if $|e(t)| > \text{Deadband}$):</b> $$ P_{out}(t) = K_{c,pH} e(t) + \frac{K_{c,pH}}{\tau_{i,pH}} \int_{0}^{t} e(t') dt' + K_{c,pH} \tau_{d,pH} \frac{de(t)}{dt} $$</p>
+                        <p class="mt-4">IF $P_{out} > 0$, THEN $F_{base} \propto P_{out}$</p>
+                        <p>IF $P_{out} < 0$, THEN $F_{acid} \propto -P_{out}$</p>
+                    </div>
+
+                    <h4 class="text-xl font-semibold mt-6">C. Advanced Feed Strategies: DO-Stat Control</h4>
+                    <p>Instead of a pre-programmed feed, the DO-Stat strategy feeds the culture intelligently based on its metabolic state.</p>
+                    <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-lg my-4 overflow-x-auto">
+                        <p><b>Trigger Condition:</b> A feed "shot" is delivered when the rate of change of DO exceeds a threshold, indicating substrate exhaustion.</p>
+                        <p class="mt-2">IF $\frac{d(DO)}{dt} > \text{Threshold}$ AND $S_1$ is low THEN trigger a feed shot.</p>
+                        <p class="mt-4"><b>Feed Rate Equation:</b> $$ F_{1,rate} = F_{basal} + F_{shot} $$</p>
+                    </div>
+                     <div class="mt-4">
+                        <h5 class="font-semibold">Parameter Definitions:</h5>
+                        <ul class="list-disc list-inside text-sm space-y-1">
+                            <li><b>DO Spike Threshold:</b> The minimum rate of DO change (%/hr) required to trigger a feed shot.</li>
+                            <li><b>Feed Shot Size:</b> The volume of feed (mL/L) delivered per shot.</li>
+                            <li><b>Basal Feed Rate:</b> A low, constant feed to prevent complete starvation.</li>
+                            <li><b>Lockout Period:</b> A brief duration after a shot where no new shots can be triggered.</li>
+                        </ul>
+                    </div>
+
+                    <hr class="my-8">
+
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="flex-shrink-0 w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                            
+                        </div>
+                        <h3 class="text-2xl font-semibold text-green-700 m-0">Part 4: Introducing Stochasticity (Noise)</h3>
+                    </div>
+                    <p>The previous equations describe a perfect, deterministic world. To model a more realistic process, we introduce random fluctuations, transforming our model from a system of Ordinary Differential Equations (ODEs) to Stochastic Differential Equations (SDEs). An SDE has two parts: a deterministic "drift" (the original ODE) and a random "diffusion" term.</p>
+                    <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-lg my-4 overflow-x-auto">
+                        <p><b>General SDE Form:</b> $$dX_t = \underbrace{f(X_t, t)dt}_{\text{Drift (deterministic)}} + \underbrace{g(X_t, t)dW_t}_{\text{Diffusion (stochastic)}}$$</p>
+                        <p class="mt-2">Here, $dW_t$ represents a Wiener process or "Brownian motion," which is the mathematical formalization of random noise that accumulates over time.</p>
+                    </div>
+
+                    <h4 class="text-xl font-semibold mt-6">A. Biological Variability</h4>
+                    <p>We model biological variability by adding a diffusion term to the mass balance equations for biomass and product. The magnitude of the noise is proportional to the current amount of biomass or product.</p>
+                    <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-lg my-4 overflow-x-auto">
+                        <p><b>Biomass (X):</b> $$dX = \left[ (\mu - k_d)X - \frac{X}{V}F_{total} \right]dt + \sigma_b X dW_t$$</p>
+                        <p class="mt-2"><b>Product (P):</b> $$dP = \left[ q_p X - \frac{P}{V}F_{total} \right]dt + \sigma_p P dW_t$$</p>
+                    </div>
+                    <div class="mt-4">
+                        <h5 class="font-semibold">Parameter Definitions:</h5>
+                        <ul class="list-disc list-inside text-sm space-y-1">
+                            <li><b>$\sigma_b$</b>: The intensity of the noise for biomass, corresponding to <b>Growth Variability</b>.</li>
+                            <li><b>$\sigma_p$</b>: The intensity of the noise for the product, corresponding to <b>Production Variability</b>.</li>
+                        </ul>
+                    </div>
+
+                    <h4 class="text-xl font-semibold mt-6">B. Process and Sensor Noise</h4>
+                    <p>Other sources of noise are modeled more directly. Sensor noise is added to the "measured" value that the PID controllers see, while process noise is added to the final output of an actuator (like a feed pump).</p>
+                    <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-lg my-4 overflow-x-auto">
+                        <p><b>Example (Sensor Noise):</b> $$DO_{measured} = DO_{actual} + \mathcal{N}(0, \sigma^2_{sensor})$$</p>
+                        <p class="mt-2"><b>Example (Process Noise):</b> $$F_{1,actual} = F_{1,setpoint} \times (1 + \mathcal{N}(0, \sigma^2_{process}))$$</p>
+                        <p class="mt-2">Where $\mathcal{N}(0, \sigma^2)$ is a random number drawn from a Gaussian (normal) distribution with a mean of 0 and a variance of $\sigma^2$.</p>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <div id="cookbook-modal-overlay" class="cookbook-modal-overlay"></div>
+    <div id="cookbook-modal" class="cookbook-modal"></div>
+    
+    <script src="dist/bundle.js"></script>
+
+</body>
+</html>
