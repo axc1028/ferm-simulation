@@ -1,2 +1,2 @@
-# ferm-simulation
-A repository to host a ferm-simulator
+# ferm-simulator
+A repository to host a fermentation simulation tool
